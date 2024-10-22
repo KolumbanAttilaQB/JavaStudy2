@@ -12,6 +12,9 @@
         <action
             android:id="@+id/action_mainFragment_to_addTaskFragment"
             app:destination="@id/addTaskFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_mapFragment"
+            app:destination="@id/getLocation" />
     </fragment>
 
     <fragment
@@ -19,4 +22,10 @@
         android:name="com.example.javastudy.Views.NewTask.AddNewTaskFragment"
         android:label="Add Task"
         tools:layout="@layout/fragment_add_task" />
+
+    <fragment
+        android:id="@+id/getLocation"
+        android:name="com.example.javastudy.Views.Map.MapFragment"
+        android:label="Add Task"
+        tools:layout="@layout/fragment_get_location" />
 </navigation>

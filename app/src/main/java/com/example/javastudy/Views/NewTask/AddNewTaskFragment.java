@@ -30,9 +30,6 @@ import retrofit2.Retrofit;
 
 
 public class AddNewTaskFragment extends Fragment {
-    private EditText taskName;
-    private Button addTask, backButton;
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -73,7 +70,7 @@ public class AddNewTaskFragment extends Fragment {
     private void postData(String name, String status, NavController navController) {
         Retrofit retrofit = ApiClient.getInstance(Constants.taskAPI).getRetrofit();
         TaskRetrofit taskRetrofit = retrofit.create(TaskRetrofit.class);
-        Call<TaskModel> call = taskRetrofit.postTask(new TaskModel(name, status));
+        Call<TaskModel> call = taskRetrofit.postTask(new TaskModel(name, status, "https://picsum.photos/200/300"));
 
 
         call.enqueue(new Callback<TaskModel>() {

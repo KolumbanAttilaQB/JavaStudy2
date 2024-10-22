@@ -1,5 +1,6 @@
 package com.example.javastudy.Core;
 import com.example.javastudy.Data.TaskModel;
+import com.example.javastudy.Data.TaskModelWithId;
 
 import java.util.List;
 
@@ -18,6 +19,6 @@ public interface TaskRetrofit {
     Call<TaskModel> postTask(@Body TaskModel task);
 
     @POST("updatetask.php")
-    Call<Void> updateTask(@Body TaskModel task);
+    Call<Void> updateTask(@Body TaskModelWithId task);
 
 }

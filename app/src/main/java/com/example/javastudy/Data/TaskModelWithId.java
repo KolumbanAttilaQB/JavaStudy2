@@ -1,23 +1,19 @@
 package com.example.javastudy.Data;
 
-public class TaskModel {
+public class TaskModelWithId {
 
-    private final Integer id = null;
+    private final Integer id;
     private final String name;
     private final String status;
-    private final String image;
 
-    public TaskModel(String name, String status, String img) {
+    public TaskModelWithId(Integer id, String name, String status) {
+        this.id = id;
         this.name = name;
         this.status = status;
-        this.image = img;
     }
 
     public String getName() {
         return  name;
-    }
-    public String getImg() {
-        return image;
     }
 
     public String getStatus() {
@@ -29,5 +25,3 @@ public class TaskModel {
     }
 
 }
-
-

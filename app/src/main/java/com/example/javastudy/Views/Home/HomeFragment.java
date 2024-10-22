@@ -5,6 +5,7 @@ import static androidx.navigation.Navigation.findNavController;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,12 +27,14 @@ import com.example.javastudy.Core.ApiClient;
 import com.example.javastudy.Core.TaskRetrofit;
 import com.example.javastudy.Data.TaskAdapter;
 import com.example.javastudy.Data.TaskModel;
+import com.example.javastudy.Data.TaskModelWithId;
 import com.example.javastudy.Data.UserModel;
 import com.example.javastudy.R;
 import com.example.javastudy.Utils.Constants;
 import com.example.javastudy.Views.NewTask.AddNewTaskFragment;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -46,6 +49,7 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
     RecyclerView recyclerView;
     ProgressBar progressBar;
     Button addNewTask;
+    Button openMap;
 
     @SuppressLint("MissingInflatedId")
     @Nullable
@@ -63,6 +67,15 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         recyclerView = view.findViewById(R.id.recyclerView);
         progressBar = view.findViewById(R.id.progressbar);
         addNewTask = view.findViewById(R.id.addTask);
+        openMap = view.findViewById(R.id.getLocation);
+
+        openMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                NavController navController = findNavController(requireActivity(), R.id.nav_host_fragment);
+                navController.navigate(R.id.action_mainFragment_to_mapFragment);
+            }
+        });
 
         addNewTask.setOnClickListener( new View.OnClickListener()  {
             @Override
@@ -74,6 +87,17 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         });
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == taskAdapter.getItemCount() - 1) {
+                    taskAdapter.setLoading(true);
+                    loadMoreTasks();
+                }
+            }
+        });
         taskList();
 
 
@@ -120,12 +144,12 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         Retrofit retrofit = ApiClient.getInstance(Constants.taskAPI).getRetrofit();
         TaskRetrofit taskRetrofit = retrofit.create(TaskRetrofit.class);
 
-        Call<Void> updateCall = taskRetrofit.updateTask(new TaskModel(task.getName(), isChecked ? "completed" : "pending"));
+        Call<Void> updateCall = taskRetrofit.updateTask(new TaskModelWithId(task.getId(),task.getName(), isChecked ? "completed" : "pending"));
         updateCall.enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(requireContext(), "Task updated", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(requireContext(), "Task updated", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(requireContext(), "Failed to update task: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
@@ -137,4 +161,24 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
             }
         });
     }
+
+    private void loadMoreTasks() {
+        new Handler().postDelayed(() -> {
+            List<TaskModel> newTasks = generateMoreTasks();
+            if (newTasks.size() > 0) {
+                taskAdapter.addTasks(newTasks);
+            }
+            taskAdapter.setLoading(false);
+        }, 2000);
+    }
+
+    private List<TaskModel> generateMoreTasks() {
+        List<TaskModel> newTasks = new ArrayList<>();
+        int currentSize = taskAdapter.getItemCount();
+        for (int i = currentSize; i < currentSize + 10; i++) {
+            newTasks.add(new TaskModel("Task " + (i + 1), "pending", "https://picsum.photos/200/300"));
+        }
+        return newTasks;
+    }
+
 }
