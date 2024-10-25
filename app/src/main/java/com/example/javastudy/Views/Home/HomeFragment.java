@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
@@ -50,6 +51,8 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
     ProgressBar progressBar;
     Button addNewTask;
     Button openMap;
+    SearchView searchView;
+    List<TaskModel> filteredTasks = new ArrayList<>();
 
     @SuppressLint("MissingInflatedId")
     @Nullable
@@ -58,6 +61,7 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         welcomeText = view.findViewById(R.id.welcomeText);
+        searchView = view.findViewById(R.id.search);
         SharedPreferences sharedPreferences = requireContext().getSharedPreferences("MyPrefs", getContext().MODE_PRIVATE);
 
         String jsonString = sharedPreferences.getString("user", "");
@@ -92,13 +96,35 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                if (layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == taskAdapter.getItemCount() - 1) {
-                    taskAdapter.setLoading(true);
-                    loadMoreTasks();
-                }
+//                if (layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == taskAdapter.getItemCount() - 1) {
+////                    taskAdapter.setLoading(true);
+////                    loadMoreTasks();
+//                }
             }
         });
-        taskList();
+       List<TaskModel> result = taskList();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d("SEARCH", query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                Log.d("SEARCH2", newText + " ---- Results: " + result.size());
+
+                filteredTasks.clear();
+
+                for (TaskModel taskModel : result) {
+                    if (taskModel.getName().toLowerCase().contains(newText.toLowerCase())) {
+                        filteredTasks.add(taskModel);
+                    }
+                }
+                taskAdapter.notifyDataSetChanged();
+                return true;
+            }
+        });
 
 
         return view;
@@ -111,18 +137,22 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         }
     }
 
-    protected void taskList() {
+    protected List<TaskModel> taskList() {
         progressBar.setVisibility(View.VISIBLE);
         Retrofit retrofit = ApiClient.getInstance(Constants.taskAPI).getRetrofit();
         TaskRetrofit taskRetrofit = retrofit.create(TaskRetrofit.class);
         Call<List<TaskModel>> call = taskRetrofit.getTasks();
-
+        List<TaskModel> tasks = new ArrayList<>();
         call.enqueue(new Callback<List<TaskModel>>() {
             @Override
             public void onResponse(Call<List<TaskModel>> call, Response<List<TaskModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    taskAdapter = new TaskAdapter(response.body(), HomeFragment.this);
+                    tasks.addAll(response.body());
+                    filteredTasks.addAll(tasks);
+
+                    taskAdapter = new TaskAdapter(filteredTasks, HomeFragment.this);
                     recyclerView.setAdapter(taskAdapter);
+
                     progressBar.setVisibility(View.GONE);
                 } else {
                     Log.d("TASK_LIST", "Error " + response.message());
@@ -136,7 +166,9 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
                 Toast.makeText(requireContext(), "Error getting tasks: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+        return  tasks;
     }
+
 
 
     @Override
@@ -162,23 +194,23 @@ public class HomeFragment extends Fragment implements  TaskAdapter.OnTaskChecked
         });
     }
 
-    private void loadMoreTasks() {
-        new Handler().postDelayed(() -> {
-            List<TaskModel> newTasks = generateMoreTasks();
-            if (newTasks.size() > 0) {
-                taskAdapter.addTasks(newTasks);
-            }
-            taskAdapter.setLoading(false);
-        }, 2000);
-    }
-
-    private List<TaskModel> generateMoreTasks() {
-        List<TaskModel> newTasks = new ArrayList<>();
-        int currentSize = taskAdapter.getItemCount();
-        for (int i = currentSize; i < currentSize + 10; i++) {
-            newTasks.add(new TaskModel("Task " + (i + 1), "pending", "https://picsum.photos/200/300"));
-        }
-        return newTasks;
-    }
+//    private void loadMoreTasks() {
+////        new Handler().postDelayed(() -> {
+////            List<TaskModel> newTasks = generateMoreTasks();
+////            if (newTasks.size() > 0) {
+////                taskAdapter.addTasks(newTasks);
+////            }
+////            taskAdapter.setLoading(false);
+////        }, 2000);
+//    }
+//
+//    private List<TaskModel> generateMoreTasks() {
+//        List<TaskModel> newTasks = new ArrayList<>();
+//        int currentSize = taskAdapter.getItemCount();
+//        for (int i = currentSize; i < currentSize + 10; i++) {
+//            newTasks.add(new TaskModel("Task " + (i + 1), "pending", "https://picsum.photos/200/300"));
+//        }
+//        return newTasks;
+//    }
 
 }
